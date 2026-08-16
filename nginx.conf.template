@@ -1,0 +1,57 @@
+worker_processes auto;
+error_log /dev/stderr warn;
+pid /tmp/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+    access_log    off;
+
+    client_body_temp_path /tmp/nginx-client-body;
+    proxy_temp_path       /tmp/nginx-proxy;
+    fastcgi_temp_path     /tmp/nginx-fastcgi;
+    uwsgi_temp_path       /tmp/nginx-uwsgi;
+    scgi_temp_path        /tmp/nginx-scgi;
+
+    # Newsletters carry images and templates; keep uploads generous.
+    client_max_body_size 128m;
+
+    # Railway's edge sets X-Forwarded-For to "<client>, <edge hop>" and the edge
+    # hop rotates between requests, so a limiter keyed on the whole header never
+    # fires. $remote_addr is always the edge here. Take the first address only.
+    map $http_x_forwarded_for $client_ip {
+        default          $remote_addr;
+        "~^([^,\s]+)"    $1;
+    }
+
+    limit_req_zone $client_ip zone=login:10m rate=10r/m;
+    limit_req_status 429;
+
+    upstream listmonk {
+        server 127.0.0.1:9000;
+        keepalive 16;
+    }
+
+    server {
+        listen ${NGINX_PORT} default_server;
+        server_name _;
+
+        # listmonk has no login throttle anywhere in its source: a wrong password
+        # is an unbounded, unrecorded retry. This is the only place it can be added
+        # without patching the binary.
+        location = /admin/login {
+            limit_req zone=login burst=5 nodelay;
+            proxy_pass http://listmonk;
+            include /etc/nginx/proxy_common.conf;
+        }
+
+        location / {
+            proxy_pass http://listmonk;
+            include /etc/nginx/proxy_common.conf;
+        }
+    }
+}
