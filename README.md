@@ -1,5 +1,9 @@
 # listmonk on Railway
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/listmonk-or-just-updated-mailchimp-alter?referralCode=Z1xivh&utm_medium=integration&utm_source=template&utm_campaign=generic)
+
+**Deploy on Railway:** [Listmonk template](https://railway.com/deploy/listmonk-or-just-updated-mailchimp-alter?referralCode=Z1xivh&utm_medium=integration&utm_source=template&utm_campaign=generic)
+
 Wrapper image for the [Listmonk](https://listmonk.app) Railway template
 (`listmonk-...` on the Railway marketplace), pinned to listmonk **v6.2.0**.
 
